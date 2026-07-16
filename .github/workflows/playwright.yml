@@ -29,8 +29,8 @@ jobs:
         run: npx playwright install --with-deps
 
       - name: Run Tests
-      env:
-        USER_NAME: ${{ secrets.USER_NAME }}
-        PASS_WORD: ${{ secrets.PASS_WORD }}
-        BASEURL: ${{ secrets.BASEURL }}
-      run: npx playwright test
+        env:
+          USER_NAME: ${{ secrets.USER_NAME }}
+          PASS_WORD: ${{ secrets.PASS_WORD }}
+          BASEURL: ${{ secrets.BASEURL }}
+        run: npx playwright test
