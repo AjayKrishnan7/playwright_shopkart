@@ -1,7 +1,5 @@
 import winston from "winston";
 
-
-
 const sensitiveKeys = new Set([
     "authorization",
     "cardnumber",
@@ -9,14 +7,6 @@ const sensitiveKeys = new Set([
     "password",
     "token"
 ])
-
-const {combine,errors , json, timestamp, printf} = winston.format
-
-const logFormat = printf(
-  ({ timestamp, level, message, correlationId, testId }) => {
-    return `${timestamp} | ${level.toUpperCase()} | ${testId} | ${message}`;
-  }
-);
 
 export function redactForLog(value: unknown): unknown{
     if(Array.isArray(value)){
@@ -44,22 +34,30 @@ const redactSensitiveFields = winston.format((info)=>{
     return info
 })
 
+const {combine,errors , json, printf,timestamp, colorize} = winston.format
 
+const terminalFormat = printf((info) => {
+    const { level, message, correlationId } = info;
+
+    const shortId = correlationId ? String(correlationId).substring(0, 8) : "NO-ID";
+
+    return `[${shortId}] ${level.toUpperCase()}: ${message}`;
+});
 
 export const logger = winston.createLogger({
-
     level: process.env.LOG_LEVEL ?? "info",
-    format: combine(
-    redactSensitiveFields(),
-    timestamp(),
-    errors({ stack: true }),
-    logFormat
-    ),
+    format: combine(redactSensitiveFields(),timestamp(),errors({stack:true}),json()),
     defaultMeta:{
         service: "shopkart"
     },
-    transports: [new winston.transports.Console()]
+   transports: [
+        new winston.transports.Console({
+            format: combine(
+                colorize(),
+                terminalFormat
+            )
+        })
+   ]
 })
 
 export type AppLogger = typeof logger
- 

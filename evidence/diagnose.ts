@@ -24,7 +24,7 @@ export const test = base.extend<DiagnosticFixtures>({
     const baseMeta = {
       correlationId,
       project: testInfo.project.name,
-      service: "sdet-retail-playwright",
+      service: "shopkart",
       specFile: testInfo.file,
       testId: testInfo.title,
       workerIndex: testInfo.workerIndex,

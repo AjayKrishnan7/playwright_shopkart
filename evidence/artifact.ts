@@ -1,84 +1,31 @@
-import { expect, test as base } from './diagnose';
+import { expect, test as base } from '../evidence/diagnose';
 
-type ArtifactEvidence = {
-   apiResponse?: unknown;
-   diagnosis?: string;
-   requestData?: unknown;
-   screenshots: { name: string; buffer: Buffer }[];
-   cartData?: unknown;
-};
+type Evidence = Record<string, unknown>;
 
-export const test = base.extend<{ evidence: ArtifactEvidence }>({
+export const test = base.extend<{ evidence: Evidence }>({
     evidence: async ({}, use, testInfo) => {
-        const evidence: ArtifactEvidence = { screenshots: [] };
+
+        const evidence: Evidence = {};
+
 
         await use(evidence); 
 
-      if (true) {
-    try {
-        const payload = evidence.apiResponse ?? { error: "No cart response was captured before failure." };
-        await testInfo.attach("api-response.json", {
 
-        body: JSON.stringify(payload, null, 2),
-        contentType: "application/json"
+        for (const [key, value] of Object.entries(evidence)) {
+            try {
+                // Determine format based on the data type
+                const isString = typeof value === 'string';
+                const fileName = isString ? `${key}.txt` : `${key}.json`;
+                const contentType = isString ? 'text/plain' : 'application/json';
+                const body = isString ? value : JSON.stringify(value, null, 2);
 
-        });
-    } catch (err) {
-        console.error("Failed to attach api-response.json:", err);
-    }
-
-    try {
-        const payload = evidence.requestData ?? { error: "No api request was captured before failure." };
-        await testInfo.attach("api-request-data.json", {
-
-        body: JSON.stringify(payload, null, 2),
-        contentType: "application/json"
-
-        });
-    } catch (err) {
-        console.error("Failed to attach api-request.json:", err);
-    }
-
-
-    try {
-       if (evidence.screenshots && evidence.screenshots.length > 0) {
-                for (let i = 0; i < evidence.screenshots.length; i++) {
-                    const shot = evidence.screenshots[i];
-
-                    // Fallback to "screenshot-0.png" if no name was provided
-                    const fileName = shot.name ? `${shot.name}.png` : `screenshot-${i}.png`;
-
-                    await testInfo.attach(fileName, {
-                        body: shot.buffer,
-                        contentType: "image/png"
-                    });
-                }
+                await testInfo.attach(fileName, {
+                    body,
+                    contentType
+                });
+            } catch (err) {
+                console.error(`Failed to attach evidence for "${key}":`, err);
             }
-    } catch (err) {
-        console.error("Failed to attach screenshot:", err);
-    }
-
-     try {
-        const payload = evidence.cartData ?? { error: "No cart data was captured before failure." };
-        await testInfo.attach("cart-data.json", {
-
-        body: JSON.stringify(payload, null, 2),
-        contentType: "application/json"
-
-        });
-    } catch (err) {
-        console.error("Failed to attach api-request.json:", err);
-    }
-
-
-    try {
-        await testInfo.attach("diagnosis.txt", {
-            body: evidence.diagnosis ?? "No diagnosis captured before failure.",
-            contentType: "text/plain"
-        });
-    } catch (err) {
-        console.error("Failed to attach diagnosis.txt:", err);
-    }
         }
     }
 });
